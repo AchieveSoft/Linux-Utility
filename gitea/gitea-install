@@ -1,5 +1,12 @@
 #!/bin/bash
 
+USER=gitea
+
+id -u $USER &>/dev/null || sudo adduser --system --group --disabled-password $USER
+
 wget -O gitea https://dl.gitea.com/gitea/1.25.2/gitea-1.25.2-linux-amd64
 chmod +x gitea
-./gitea
+sudo mv gitea /usr/local/bin/gitea
+sudo chown $USER:$USER /usr/local/bin/gitea
+
+sudo -u $USER /usr/local/bin/gitea
