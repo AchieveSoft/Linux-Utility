@@ -9,4 +9,5 @@ chmod +x gitea
 sudo mv gitea /usr/local/bin/gitea
 sudo chown $USER:$USER /usr/local/bin/gitea
 
-sudo -u $USER /usr/local/bin/gitea
+sudo -u $USER nohup /usr/local/bin/gitea > /var/log/gitea.log 2>&1 &
+echo "Gitea started in background."
