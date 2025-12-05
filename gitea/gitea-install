@@ -1,13 +1,52 @@
 #!/bin/bash
 
 USER=gitea
+GITEA_VERSION=1.25.2
 
+echo "=== Creating user ==="
 id -u $USER &>/dev/null || sudo adduser --system --group --disabled-password $USER
 
-wget -O gitea https://dl.gitea.com/gitea/1.25.2/gitea-1.25.2-linux-amd64
+echo "=== Creating directories ==="
+sudo mkdir -p /var/lib/gitea/{custom,data,log}
+sudo mkdir -p /etc/gitea
+sudo chown -R $USER:$USER /var/lib/gitea
+sudo chown -R $USER:$USER /etc/gitea
+sudo chmod -R 750 /var/lib/gitea
+sudo chmod -R 750 /etc/gitea
+
+echo "=== Downloading Gitea $GITEA_VERSION ==="
+wget -O gitea https://dl.gitea.com/gitea/$GITEA_VERSION/gitea-$GITEA_VERSION-linux-amd64
 chmod +x gitea
 sudo mv gitea /usr/local/bin/gitea
 sudo chown $USER:$USER /usr/local/bin/gitea
 
-sudo -u $USER nohup /usr/local/bin/gitea > /var/log/gitea.log 2>&1 &
-echo "Gitea started in background."
+echo "=== Creating systemd service ==="
+sudo tee /etc/systemd/system/gitea.service > /dev/null <<EOF
+[Unit]
+Description=Gitea (Git with a cup of tea)
+After=network.target
+
+[Service]
+RestartSec=2s
+Type=simple
+User=gitea
+Group=gitea
+WorkingDirectory=/var/lib/gitea
+
+ExecStart=/usr/local/bin/gitea web --config /etc/gitea/app.ini
+
+Restart=always
+Environment=USER=gitea HOME=/var/lib/gitea GITEA_WORK_DIR=/var/lib/gitea
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "=== Enabling and starting service ==="
+sudo systemctl daemon-reload
+sudo systemctl enable gitea
+sudo systemctl start gitea
+
+echo "✅ Gitea installation complete!"
+echo "✅ Service running: systemctl status gitea"
+echo "✅ Default port: 3000"
